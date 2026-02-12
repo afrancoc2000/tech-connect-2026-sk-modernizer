@@ -64,7 +64,7 @@ The infrastructure includes the following Azure services:
 ### Option 1: Deploy via Azure Portal (Recommended for POC)
 
 1. Click the **Deploy to Azure** button:
-   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fafrancoc2000%2Ftech-connect-2026-sk-modernizer%2Fmain%2Finfrastructure%2Ftemplate.json)
+   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fafrancoc2000%2Ftech-connect-2026-sk-modernizer%2Fmain%2Finfrastructure%2Fmaster-template.json)
 
 2. You'll be taken to Azure Portal where you can:
    - Select your subscription
@@ -93,15 +93,11 @@ az group create \
   --name $RESOURCE_GROUP \
   --location $LOCATION
 
-# Deploy template
+# Deploy infrastructure using master template
 az deployment group create \
   --name deployment-$(date +%s) \
   --resource-group $RESOURCE_GROUP \
-  --template-file template.json \
-  --parameters parameters.json \
-  --parameters projectName=$PROJECT_NAME \
-  --parameters environment=$ENVIRONMENT \
-  --parameters location=$LOCATION
+  --template-file master-template.json \
 ```
 
 ### Option 3: Deploy via PowerShell
@@ -110,7 +106,7 @@ az deployment group create \
 # Set variables
 $projectName = "aiappsmod"
 $environment = "poc"
-$location = "eastus"
+$location = "centralus"
 $resourceGroup = "rg-$projectName-$environment"
 
 # Create resource group
@@ -118,14 +114,12 @@ New-AzResourceGroup `
   -Name $resourceGroup `
   -Location $location
 
-# Deploy template
+# Deploy master template with child templates
 New-AzResourceGroupDeployment `
   -Name "deployment-$(Get-Date -Format 'yyyyMMddHHmmss')" `
   -ResourceGroupName $resourceGroup `
-  -TemplateFile "template.json" `
-  -TemplateParameterFile "parameters.json" `
-  -projectName $projectName `
-  -environment $environment `
+  -TemplateFile "master-template.json" `
+  -TemplateParameterFile "master-parameters.json" `
   -location $location
 ```
 
@@ -157,8 +151,78 @@ jobs:
         with:
           subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           resourceGroupName: rg-aiappsmod-poc
-          template: infrastructure/template.json
-          parameters: infrastructure/parameters.json
+          template: infrastructure/master-template.json
+          parameters: infrastructure/master-parameters.json
+```
+
+## Modular Deployment Architecture
+
+The infrastructure is organized using **nested ARM templates** for modularity and testability:
+
+### Master Template Structure
+```
+master-template.json (orchestrator)
+├── child-network.json (VNet, NSG)
+├── child-storage.json (Storage)
+├── child-acr.json (Container Registry)
+├── child-keyvault.json (Key Vault)
+├── child-monitoring.json (Monitoring)
+├── child-ai-hub.json (AI Hub - depends on: storage, keyvault, monitoring)
+├── child-ai-project.json (AI Project - depends on: hub)
+└── child-apim.json (API Management - depends on: network)
+```
+
+### Benefits of Modular Approach
+✅ **Independent Testing**: Deploy and test individual components  
+✅ **Faster Debugging**: Isolate failures to specific templates  
+✅ **Flexible Updates**: Modify one component without redeploying all  
+✅ **Better Organization**: Clear separation of concerns  
+✅ **Reusability**: Combine child templates in different ways  
+
+### Testing Individual Components
+
+**Test Container Registry only** (fastest test):
+```bash
+az deployment group create \
+  --resource-group "azure-ai" \
+  --template-file child-acr.json \
+  --parameters acrName=acrappmodv4cus location=centralus acrSku=Standard
+```
+
+**Test Storage + Key Vault + Monitoring**:
+```bash
+az deployment group create \
+  --resource-group "azure-ai" \
+  --template-file child-storage.json \
+  --parameters storageName=aistgacct location=centralus
+
+az deployment group create \
+  --resource-group "azure-ai" \
+  --template-file child-keyvault.json \
+  --parameters kvName=aikvault location=centralus
+
+az deployment group create \
+  --resource-group "azure-ai" \
+  --template-file child-monitoring.json \
+  --parameters appInsightsName=aiappins logAnalyticsName=ailogs location=centralus
+```
+
+**Test AI Hub** (requires storage, keyvault, monitoring to exist first):
+```bash
+az deployment group create \
+  --resource-group "azure-ai" \
+  --template-file child-ai-hub.json \
+  --parameters aiHubName=aihub location=centralus \
+    storageName=aistgacct kvName=aikvault appInsightsName=aiappins
+```
+
+**Validation-only (no deployment)**:
+```bash
+# Validates master template and all dependencies
+az deployment group validate \
+  --resource-group "azure-ai" \
+  --template-file master-template.json \
+  --parameters master-parameters.json
 ```
 
 ## Post-Deployment Configuration

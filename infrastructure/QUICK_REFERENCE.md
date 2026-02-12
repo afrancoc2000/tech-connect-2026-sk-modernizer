@@ -2,10 +2,23 @@
 
 ## 📋 Files in This Directory
 
+### Master & Child Templates (Modular Deployment)
 | File | Purpose |
-|------|---------|
-| `template.json` | Complete ARM template with all Azure resources |
-| `parameters.json` | Default parameter values |
+|------|----------|
+| `master-template.json` | Master ARM template orchestrating all child templates |
+| `master-parameters.json` | Parameters for master template |
+| `child-network.json` | VNet, NSG, and subnets |
+| `child-storage.json` | Storage account |
+| `child-acr.json` | Container Registry |
+| `child-keyvault.json` | Key Vault |
+| `child-monitoring.json` | Application Insights & Log Analytics |
+| `child-ai-hub.json` | Azure AI Foundry Hub |
+| `child-ai-project.json` | Azure AI Foundry Project |
+| `child-apim.json` | API Management |
+
+### Support Files
+| File | Purpose |
+|------|----------|
 | `deploy-infrastructure.ps1` | PowerShell deployment script (Windows) |
 | `deploy-summary.sh` | Bash script to view deployment status |
 | `docker-compose.yml` | Local development environment |
@@ -36,12 +49,12 @@ bash ./deploy-infrastructure.sh
 # Variables
 PROJECT="aiappsmod"
 ENV="poc"
-LOCATION="eastus"
+LOCATION="centralus"
 RG="rg-$PROJECT-$ENV"
 
-# Create and deploy
+# Create and deploy with master template
 az group create --name $RG --location $LOCATION
-az deployment group create --resource-group $RG --template-file template.json --parameters parameters.json
+az deployment group create --resource-group $RG --template-file master-template.json --parameters master-parameters.json --parameters location=$LOCATION
 ```
 
 ## 🔧 Common Tasks
@@ -190,6 +203,52 @@ Edit `parameters.json`:
   "vmSize": { "value": "4" },
   "memoryInGb": { "value": "4.0" }
 }
+```
+
+## 🧪 Testing Modular Templates
+
+Test individual components independently to isolate issues:
+
+### Test Container Registry (Fastest)
+```bash
+az deployment group create \
+  --resource-group $RG \
+  --template-file child-acr.json \
+  --parameters acrName=acrappmod location=centralus acrSku=Standard
+```
+
+### Test Storage Account
+```bash
+az deployment group create \
+  --resource-group $RG \
+  --template-file child-storage.json \
+  --parameters storageName=aistgacct location=centralus
+```
+
+### Test Network (VNet, NSG, Subnets)
+```bash
+az deployment group create \
+  --resource-group $RG \
+  --template-file child-network.json \
+  --parameters projectName=aiappsmod environment=poc location=centralus vnetName=aiappsmod-poc-vnet
+```
+
+### Validate All Templates (No Deployment)
+```bash
+az deployment group validate \
+  --resource-group $RG \
+  --template-file master-template.json \
+  --parameters master-parameters.json \
+  --parameters location=centralus
+```
+
+### Deploy Full Master Template
+```bash
+az deployment group create \
+  --resource-group $RG \
+  --template-file master-template.json \
+  --parameters master-parameters.json \
+  --parameters location=centralus
 ```
 
 ## 🔐 Security Checklist

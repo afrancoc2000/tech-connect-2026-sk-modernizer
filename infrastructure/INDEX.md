@@ -16,9 +16,19 @@ If you're new to this package, follow this reading order:
 
 ## 📁 File Organization
 
-### 🚀 Deployment & Configuration
-- **[template.json](template.json)** - ARM template with all Azure resources
-- **[parameters.json](parameters.json)** - Default parameter values
+### 🚀 Master & Child ARM Templates (Modular Deployment)
+- **[master-template.json](master-template.json)** - Master template orchestrator
+- **[master-parameters.json](master-parameters.json)** - Master template parameters
+- **[child-network.json](child-network.json)** - VNet, NSG, subnets
+- **[child-storage.json](child-storage.json)** - Storage account
+- **[child-acr.json](child-acr.json)** - Container Registry
+- **[child-keyvault.json](child-keyvault.json)** - Key Vault
+- **[child-monitoring.json](child-monitoring.json)** - App Insights & Log Analytics
+- **[child-ai-hub.json](child-ai-hub.json)** - Azure AI Foundry Hub
+- **[child-ai-project.json](child-ai-project.json)** - Azure AI Foundry Project
+- **[child-apim.json](child-apim.json)** - API Management
+
+### 🔧 Deployment Scripts
 - **[deploy-infrastructure.ps1](deploy-infrastructure.ps1)** - PowerShell deployment script
 - **[deploy-summary.sh](deploy-summary.sh)** - Bash diagnostic script
 
@@ -54,11 +64,12 @@ If you're new to this package, follow this reading order:
 
 ### Option 3: Azure CLI
 ```bash
-az group create --name rg-aiappsmod-poc --location eastus
+az group create --name rg-aiappsmod-poc --location centralus
 az deployment group create \
   --resource-group rg-aiappsmod-poc \
-  --template-file template.json \
-  --parameters parameters.json
+  --template-file master-template.json \
+  --parameters master-parameters.json \
+  --parameters location=centralus
 ```
 
 ### Option 4: Local Development

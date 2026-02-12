@@ -9,94 +9,123 @@ I've created a comprehensive, production-ready infrastructure package for the AI
 
 ## 📦 Infrastructure Files Created
 
-### Core Deployment Files
-1. **template.json** - Comprehensive ARM template with all resources
+### Master & Child ARM Templates (Modular Deployment)
+1. **master-template.json** - Master ARM template orchestrator
+   - Deploys all 8 child templates in dependency order
+   - Supports independent testing of components
+   - Modular architecture for easier maintenance
+
+2. **master-parameters.json** - Master template parameters
+   - POC-optimized configurations for centralus region
+   - Flexible sizing options
+   - Standard SKU for Container Registry
+
+### Child Templates (Modular Components)
+3. **child-network.json** - Network infrastructure
    - Virtual Network (VNet) with 3 subnets
    - Network Security Groups with firewall rules
+   - Service endpoints for storage, keyvault, and cognitive services
+
+4. **child-storage.json** - Storage resources
+   - Azure Storage Account (Standard LRS)
+   - Blob storage for logs and data
+   - TLS 1.2 enforced
+
+5. **child-acr.json** - Container Registry
    - Azure Container Registry (Standard tier)
-   - Azure Container Instances (2-5 configurable)
-   - Azure OpenAI integration (gpt-4o model)
-   - API Management (Developer/Standard/Premium)
-   - Azure Key Vault (secrets management)
-   - Storage Account (blob and file storage)
-   - Application Insights (monitoring)
-   - Log Analytics Workspace (logging)
-   - Managed Identity (service authentication)
+   - Image retention policy (30 days)
+   - Public network access enabled
 
-2. **parameters.json** - Default parameters
-   - POC-optimized configurations
-   - Flexible sizing options
-   - Region selection support
+6. **child-keyvault.json** - Key Vault
+   - Azure Key Vault (Standard tier)
+   - RBAC authorization enabled
+   - Network ACLs configured for AzureServices bypass
 
-3. **deploy.html** - Interactive web deployment interface
-   - Modern, responsive UI
-   - One-click deployment to Azure
-   - Parameter configuration
-   - Quick preset options (POC/Staging)
-   - Deploy to Azure button
+7. **child-monitoring.json** - Monitoring & Logging
+   - Application Insights for APM
+   - Log Analytics Workspace for centralized logging
+   - 30-day retention policies
+   - Public access enabled for queries
+
+8. **child-ai-hub.json** - Azure AI Foundry Hub
+   - Machine Learning Hub workspace
+   - Integration with storage, keyvault, and monitoring
+   - Ready for AI model deployments
+
+9. **child-ai-project.json** - Azure AI Foundry Project
+   - Machine Learning Project workspace
+   - Linked to parent hub
+   - HBI workspace disabled for non-sensitive workloads
+
+10. **child-apim.json** - API Management
+    - API Management service (Developer tier)
+    - Gateway endpoint for API routing
+    - Application Insights integration
 
 ### Documentation Files
-4. **DEPLOYMENT_GUIDE.md** - Comprehensive deployment guide
-   - Detailed setup instructions
-   - Multiple deployment options
-   - Post-deployment configuration
-   - Scaling guidelines
-   - Cost estimation
-   - Security best practices
-   - Troubleshooting section
+11. **DEPLOYMENT_GUIDE.md** - Comprehensive deployment guide
+    - Detailed setup instructions
+    - Multiple deployment options
+    - Modular testing approaches
+    - Post-deployment configuration
+    - Scaling guidelines
+    - Cost estimation
+    - Security best practices
+    - Troubleshooting section
 
-5. **QUICK_REFERENCE.md** - Quick lookup guide
-   - Common commands
-   - Naming conventions
-   - Network configuration
-   - Resource operations
-   - Cleanup procedures
+12. **QUICK_REFERENCE.md** - Quick lookup guide
+    - Modular template files overview
+    - Common commands
+    - Naming conventions
+    - Network configuration
+    - Resource operations
+    - Cleanup procedures
 
-6. **TROUBLESHOOTING.md** - Problem resolution guide
-   - Common issues and solutions
-   - Deployment troubleshooting
-   - Container issues
-   - Azure OpenAI issues
-   - API Management issues
-   - Performance tuning
+13. **TROUBLESHOOTING.md** - Problem resolution guide
+    - Common issues and solutions
+    - Deployment troubleshooting
+    - Container issues
+    - Azure OpenAI issues
+    - API Management issues
+    - Performance tuning
 
 ### Configuration Files
-7. **docker-compose.yml** - Local development environment
-   - AI Modernizer app service
-   - Container Registry mock
-   - Prometheus monitoring
-   - Grafana dashboards
-   - HashiCorp Vault (secrets)
-   - Azurite storage emulation
-   - NGINX API gateway
+14. **docker-compose.yml** - Local development environment
+    - AI Modernizer app service
+    - Container Registry mock
+    - Prometheus monitoring
+    - Grafana dashboards
+    - HashiCorp Vault (secrets)
+    - Azurite storage emulation
+    - NGINX API gateway
 
-8. **Dockerfile** - Multi-stage container image
-   - Python 3.11 runtime
-   - Health checks
-   - Non-root user for security
-   - Build optimization
+15. **Dockerfile** - Multi-stage container image
+    - Python 3.11 runtime
+    - Health checks
+    - Non-root user for security
+    - Build optimization
 
-9. **nginx.conf** - API gateway configuration
-   - Request routing
-   - Rate limiting
-   - CORS headers
-   - Security headers
-   - Upstream proxying
+16. **nginx.conf** - API gateway configuration
+    - Request routing
+    - Rate limiting
+    - CORS headers
+    - Security headers
+    - Upstream proxying
 
-10. **prometheus.yml** - Monitoring configuration
+17. **prometheus.yml** - Monitoring configuration
     - Scrape configurations
     - Metrics collection
     - Health checks
     - Alert definitions (template)
 
 ### Deployment Scripts
-11. **deploy-infrastructure.ps1** - PowerShell deployment script
+18. **deploy-infrastructure.ps1** - PowerShell deployment script
     - Windows-friendly deployment
     - Parameter validation
     - Status tracking
     - Error handling
 
-12. **deploy-summary.sh** - Bash diagnostic script
+19. **deploy-summary.sh** - Bash diagnostic script
     - View deployment status
     - List resources
     - Health checks
@@ -104,7 +133,49 @@ I've created a comprehensive, production-ready infrastructure package for the AI
 
 ---
 
-## 🏗️ Infrastructure Architecture
+## � Modular Architecture Approach
+
+The infrastructure has been redesigned with a **modular nested template structure** to provide:
+
+### Key Benefits
+✅ **Independent Testing**: Test each component separately (e.g., just ACR, just networking)  
+✅ **Faster Debugging**: When deployment fails, you know exactly which component caused it  
+✅ **Partial Deployments**: Deploy only the services you need if you want to test in phases  
+✅ **Reduced Complexity**: Smaller templates are easier to understand and maintain  
+✅ **Resource Isolation**: Clear separation of concerns between components  
+✅ **Dependency Management**: Master template ensures correct deployment order  
+
+### Testing Strategy
+The modular approach allows multiple testing strategies:
+
+**Strategy 1: Complete Deployment**
+```
+master-template.json
+↓ orchestrates ↓
+All 8 child templates deployed in dependency order
+```
+
+**Strategy 2: Component-by-Component Testing**
+```
+1. Test child-acr.json (standalone, no dependencies)
+2. Test child-storage.json + child-keyvault.json (standalone)
+3. Test child-monitoring.json (standalone)
+4. Test child-ai-hub.json (requires storage, keyvault, monitoring)
+5. Test child-ai-project.json (requires hub)
+6. Test full master deployment
+```
+
+**Strategy 3: Quick Validation**
+```
+az deployment group validate --template-file master-template.json
+(No deployment, just syntax & API validation)
+```
+
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed testing commands.
+
+---
+
+## �🏗️ Infrastructure Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐

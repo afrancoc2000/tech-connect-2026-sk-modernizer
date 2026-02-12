@@ -9,10 +9,23 @@ This directory contains all the infrastructure definitions for deploying the AI 
 
 ## 📁 Files Overview
 
+### Modular ARM Templates (Master + Child Templates)
 | File | Purpose |
-|------|---------|
-| **template.json** | ARM template with all Azure resources |
-| **parameters.json** | Default parameters for the ARM template |
+|------|----------|
+| **master-template.json** | Master ARM template - orchestrates all child deployments |
+| **master-parameters.json** | Parameters for master template deployment |
+| **child-network.json** | VNet, NSG, and subnet resources |
+| **child-storage.json** | Storage account resources |
+| **child-acr.json** | Container Registry resources |
+| **child-keyvault.json** | Key Vault resources |
+| **child-monitoring.json** | Application Insights & Log Analytics |
+| **child-ai-hub.json** | Azure AI Foundry Hub |
+| **child-ai-project.json** | Azure AI Foundry Project |
+| **child-apim.json** | API Management resources |
+
+### Support & Configuration Files
+| File | Purpose |
+|------|----------|
 | **Dockerfile** | Container image for the AI Modernizer app |
 | **docker-compose.yml** | Local development environment setup |
 | **DEPLOYMENT_GUIDE.md** | Comprehensive deployment instructions |
@@ -38,17 +51,18 @@ This directory contains all the infrastructure definitions for deploying the AI 
 # Set your project configuration
 export PROJECT_NAME="aiappsmod"
 export ENVIRONMENT="poc"
-export LOCATION="eastus"
+export LOCATION="centralus"
 export RESOURCE_GROUP="rg-$PROJECT_NAME-$ENVIRONMENT"
 
 # Create resource group
 az group create --name $RESOURCE_GROUP --location $LOCATION
 
-# Deploy infrastructure
+# Deploy infrastructure using master template
 az deployment group create \
   --resource-group $RESOURCE_GROUP \
-  --template-file template.json \
-  --parameters parameters.json \
+  --template-file master-template.json \
+  --parameters master-parameters.json \
+  --parameters location=$LOCATION \
   --parameters projectName=$PROJECT_NAME environment=$ENVIRONMENT
 ```
 
@@ -72,7 +86,28 @@ docker-compose up -d
 # - Storage: http://localhost:10000
 ```
 
-## 🏗️ Architecture
+## 🏗️ Deployment Architecture
+
+### Nested Template Structure
+The infrastructure uses a **master template** that orchestrates **8 modular child templates**, allowing you to:
+- Deploy the complete infrastructure in one command
+- Test individual components independently
+- Update specific services without redeploying everything
+- Clearly see dependencies between services
+
+```
+master-template.json
+├── child-network.json (VNet, NSG)
+├── child-storage.json (Storage Account)
+├── child-acr.json (Container Registry)
+├── child-keyvault.json (Key Vault)
+├── child-monitoring.json (App Insights, Log Analytics)
+├── child-ai-hub.json (AI Hub - depends on storage, KV, monitoring)
+├── child-ai-project.json (AI Project - depends on hub)
+└── child-apim.json (API Management - depends on network)
+```
+
+### Resource Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

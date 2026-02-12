@@ -10,28 +10,38 @@
 📦 INFRASTRUCTURE PACKAGE SUMMARY
 ═══════════════════════════════════════════════════════════════════════
 
-✅ 14 FILES CREATED
+✅ 19+ FILES CREATED
 ─────────────────────
 
-DEPLOYMENT & CONFIGURATION (4 files)
-  1. template.json                  - Complete ARM template (~600 lines)
-  2. parameters.json                - Default POC parameters
-  3. deploy-infrastructure.ps1      - PowerShell deployment script
-  4. deploy-summary.sh              - Bash diagnostic script
+MASTER & CHILD TEMPLATES (10 ARM templates)
+  1. master-template.json           - Master orchestrator template
+  2. master-parameters.json         - Master template parameters
+  3. child-network.json             - VNet, NSG, subnets
+  4. child-storage.json             - Storage account
+  5. child-acr.json                 - Container Registry
+  6. child-keyvault.json            - Key Vault
+  7. child-monitoring.json          - App Insights & Log Analytics
+  8. child-ai-hub.json              - Azure AI Foundry Hub
+  9. child-ai-project.json          - Azure AI Foundry Project
+  10. child-apim.json               - API Management
+
+DEPLOYMENT SCRIPTS (2 files)
+  11. deploy-infrastructure.ps1     - PowerShell deployment script
+  12. deploy-summary.sh             - Bash diagnostic script
 
 DOCUMENTATION (6 files)
-  5. INDEX.md                       - This package index
-  6. README.md                      - Overview & quick start
-  7. INFRASTRUCTURE_SUMMARY.md      - Complete summary & guide
-  8. DEPLOYMENT_GUIDE.md            - Detailed deployment instructions
-  9. QUICK_REFERENCE.md             - Common commands & operations
-  10. TROUBLESHOOTING.md            - Issues & solutions
+  13. INDEX.md                      - This package index
+  14. README.md                     - Overview & quick start
+  15. INFRASTRUCTURE_SUMMARY.md     - Complete summary & guide
+  16. DEPLOYMENT_GUIDE.md           - Detailed deployment instructions
+  17. QUICK_REFERENCE.md            - Common commands & operations
+  18. TROUBLESHOOTING.md            - Issues & solutions
 
 CONTAINER & LOCAL DEVELOPMENT (4 files)
-  11. docker-compose.yml            - Local development environment
-  12. Dockerfile                    - Multi-stage container image
-  13. nginx.conf                    - API gateway configuration
-  14. prometheus.yml                - Monitoring configuration
+  19. docker-compose.yml            - Local development environment
+  20. Dockerfile                    - Multi-stage container image
+  21. nginx.conf                    - API gateway configuration
+  22. prometheus.yml                - Monitoring configuration
 
 
 🏗️  DEPLOYED INFRASTRUCTURE
@@ -124,13 +134,50 @@ OPTION 2: PowerShell (Windows)
   .\deploy-infrastructure.ps1 -ProjectName "aiappsmod" -Environment "poc"
 
 OPTION 3: Azure CLI
-  az group create --name rg-aiappsmod-poc --location eastus
+  az group create --name rg-aiappsmod-poc --location centralus
   az deployment group create --resource-group rg-aiappsmod-poc \
-    --template-file template.json --parameters parameters.json
+    --template-file master-template.json --parameters master-parameters.json
 
 OPTION 4: Local Development with Docker
   docker-compose up -d
   App: http://localhost:8000
+
+
+🧩 MODULAR TEMPLATE ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════
+
+The infrastructure uses a master template that orchestrates 8 child templates:
+
+Master Template:
+  master-template.json
+  ├── child-network.json               (VNet, Security Groups)
+  ├── child-storage.json               (Storage Account)
+  ├── child-acr.json                   (Container Registry)
+  ├── child-keyvault.json              (Key Vault Safe)
+  ├── child-monitoring.json            (Logging & Monitoring)
+  ├── child-ai-hub.json                (AI Hub - requires storage, kv, monitoring)
+  ├── child-ai-project.json            (AI Project - requires hub)
+  └── child-apim.json                  (API Management - requires network)
+
+BENEFITS:
+  ✓ Test individual components independently
+  ✓ Faster debugging when issues occur
+  ✓ Easier maintenance and updates
+  ✓ Clear dependency management
+  ✓ Deploy in phases if needed
+
+TESTING STRATEGY:
+  1. Validate templates (syntax check):
+     az deployment group validate --template-file master-template.json
+
+  2. Test individual components:
+     az deployment group create --template-file child-acr.json [params]
+     az deployment group create --template-file child-storage.json [params]
+
+  3. Deploy full infrastructure:
+     az deployment group create --template-file master-template.json [params]
+
+See DEPLOYMENT_GUIDE.md for detailed testing commands.
 
 
 📚 DOCUMENTATION GUIDE
