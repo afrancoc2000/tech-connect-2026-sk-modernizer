@@ -29,7 +29,7 @@ import sys
 from typing import Annotated
 
 from dotenv import load_dotenv
-from azure.core.credentials import AzureKeyCredential
+from azure.identity.aio import DefaultAzureCredential
 
 # Load environment variables
 load_dotenv(override=True)
@@ -53,28 +53,24 @@ async def run_as_mcp_server():
     
     endpoint = os.getenv("FOUNDRY_PROJECT_ENDPOINT")
     model = os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME")
-    api_key = os.getenv("FOUNDRY_API_KEY")
     
-    if not endpoint or not model or not api_key:
+    if not endpoint or not model:
         print(
-            "ERROR: Please set FOUNDRY_PROJECT_ENDPOINT, FOUNDRY_MODEL_DEPLOYMENT_NAME, and FOUNDRY_API_KEY",
+            "ERROR: Please set FOUNDRY_PROJECT_ENDPOINT and FOUNDRY_MODEL_DEPLOYMENT_NAME",
             file=sys.stderr
         )
         sys.exit(1)
     
-    credential = AzureKeyCredential(api_key)
-    
     async with (
+        DefaultAzureCredential() as credential,
         AzureAIClient(
             project_endpoint=endpoint,
             model_deployment_name=model,
             credential=credential,
         ).create_agent(
             name="CodeModernizer",
-            description="Modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework",
-            instructions="""You are an expert AI Agent Code Modernizer. Help developers 
-migrate their AI agent applications from Semantic Kernel or AutoGen to Microsoft Agent Framework.
-Analyze code patterns, generate modernized code, and provide migration guides.""",
+            instructions="""You are an expert AI Agent Code Modernizer. Your role is to modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework.
+Help developers migrate their AI agent applications by analyzing code patterns, generating modernized code, and providing migration guides.""",
             tools=get_tools(),
         ) as agent,
     ):
@@ -98,28 +94,24 @@ async def run_as_http_server():
     
     endpoint = os.getenv("FOUNDRY_PROJECT_ENDPOINT")
     model = os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME")
-    api_key = os.getenv("FOUNDRY_API_KEY")
     
-    if not endpoint or not model or not api_key:
+    if not endpoint or not model:
         print(
-            "ERROR: Please set FOUNDRY_PROJECT_ENDPOINT, FOUNDRY_MODEL_DEPLOYMENT_NAME, and FOUNDRY_API_KEY",
+            "ERROR: Please set FOUNDRY_PROJECT_ENDPOINT and FOUNDRY_MODEL_DEPLOYMENT_NAME",
             file=sys.stderr
         )
         sys.exit(1)
     
-    credential = AzureKeyCredential(api_key)
-    
     async with (
+        DefaultAzureCredential() as credential,
         AzureAIClient(
             project_endpoint=endpoint,
             model_deployment_name=model,
             credential=credential,
         ).create_agent(
             name="CodeModernizer",
-            description="Modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework",
-            instructions="""You are an expert AI Agent Code Modernizer. Help developers 
-migrate their AI agent applications from Semantic Kernel or AutoGen to Microsoft Agent Framework.
-Analyze code patterns, generate modernized code, and provide migration guides.""",
+            instructions="""You are an expert AI Agent Code Modernizer. Your role is to modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework.
+Help developers migrate their AI agent applications by analyzing code patterns, generating modernized code, and providing migration guides.""",
             tools=get_tools(),
         ) as agent,
     ):
@@ -144,9 +136,9 @@ def main():
         description="AI Agent Code Modernizer - Modernize SK/AutoGen code to Agent Framework"
     )
     parser.add_argument(
-        "--server",
+        "--mcp",
         action="store_true",
-        help="Run as HTTP server for debugging with Agent Inspector"
+        help="Run as MCP server for GitHub Copilot integration"
     )
     parser.add_argument(
         "--cli",
@@ -164,12 +156,12 @@ def main():
     
     if args.cli:
         asyncio.run(run_cli())
-    elif args.server:
+    elif args.mcp:
+        asyncio.run(run_as_mcp_server())
+    else:
+        # Default: Run as HTTP server for AI Toolkit Agent Inspector/Supervisor
         os.environ["AGENT_SERVER_PORT"] = str(args.port)
         asyncio.run(run_as_http_server())
-    else:
-        # Default: Run as MCP server for GitHub Copilot
-        asyncio.run(run_as_mcp_server())
 
 
 if __name__ == "__main__":

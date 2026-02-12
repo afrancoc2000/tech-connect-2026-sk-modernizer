@@ -15,7 +15,7 @@ This agent exposes the following tools:
 import asyncio
 import os
 from dotenv import load_dotenv
-from azure.core.credentials import AzureKeyCredential
+from azure.identity.aio import DefaultAzureCredential
 
 from agent_framework.azure import AzureAIClient
 
@@ -64,27 +64,23 @@ Always remind developers to:
 """
 
 
-async def create_modernizer_agent():
+def create_modernizer_agent(credential):
     """Create and return the modernizer agent."""
     
     endpoint = os.getenv("FOUNDRY_PROJECT_ENDPOINT")
     model = os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME")
-    api_key = os.getenv("FOUNDRY_API_KEY")
     
-    if not endpoint or not model or not api_key:
+    if not endpoint or not model:
         raise ValueError(
-            "Please set FOUNDRY_PROJECT_ENDPOINT, FOUNDRY_MODEL_DEPLOYMENT_NAME, and FOUNDRY_API_KEY "
+            "Please set FOUNDRY_PROJECT_ENDPOINT and FOUNDRY_MODEL_DEPLOYMENT_NAME "
             "environment variables. Copy .env.example to .env and configure it."
         )
     
-    credential = AzureKeyCredential(api_key)
-    client = AzureAIClient(
+    return AzureAIClient(
         project_endpoint=endpoint,
         model_deployment_name=model,
         credential=credential,
-    )
-    
-    agent = await client.create_agent(
+    ).create_agent(
         name="CodeModernizer",
         instructions=AGENT_INSTRUCTIONS,
         tools=[
@@ -92,9 +88,7 @@ async def create_modernizer_agent():
             generate_modernized_code,
             get_migration_guide,
         ],
-    ).__aenter__()
-    
-    return agent
+    )
 
 
 async def run_cli():
@@ -106,9 +100,10 @@ async def run_cli():
     print("=" * 60)
     print()
     
-    agent = await create_modernizer_agent()
-    
-    try:
+    async with (
+        DefaultAzureCredential() as credential,
+        create_modernizer_agent(credential) as agent,
+    ):
         thread = agent.get_new_thread()
         
         print("Ready! Paste your code or ask for migration help.")
@@ -132,9 +127,6 @@ async def run_cli():
                     print(chunk.text, end="", flush=True)
             
             print("\n")
-    
-    finally:
-        await agent.__aexit__(None, None, None)
 
 
 if __name__ == "__main__":
