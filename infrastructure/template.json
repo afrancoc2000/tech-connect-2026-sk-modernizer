@@ -2,7 +2,7 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "metadata": {
-    "description": "ARM Template for AI Apps Modernizer POC Infrastructure - Complete Infrastructure with VNet, ACR, APIM, Container Instances, Key Vault, Azure OpenAI, and Monitoring",
+    "description": "ARM Template for AI Apps Modernizer POC Infrastructure - Complete Infrastructure with VNet, ACR, APIM, Container Instances, Key Vault, Azure AI Foundry, and Monitoring",
     "author": "Cloud Architecture Team",
     "version": "1.0.0"
   },
@@ -38,11 +38,18 @@
         "description": "Optional: Container image URI"
       }
     },
-    "skuOpenAI": {
+    "aiFoundryHubName": {
       "type": "string",
-      "defaultValue": "S0",
+      "defaultValue": "aimodernizer-hub",
       "metadata": {
-        "description": "Azure OpenAI SKU"
+        "description": "Azure AI Foundry Hub name"
+      }
+    },
+    "aiFoundryProjectName": {
+      "type": "string",
+      "defaultValue": "aimodernizer-project",
+      "metadata": {
+        "description": "Azure AI Foundry Project name"
       }
     },
     "vmSize": {
@@ -75,6 +82,14 @@
       "metadata": {
         "description": "API Management tier"
       }
+    },
+    "containerRegistrySku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": ["Basic", "Standard", "Premium"],
+      "metadata": {
+        "description": "Container Registry SKU tier (Basic for POC/dev, Standard for production)"
+      }
     }
   },
   "variables": {
@@ -91,7 +106,8 @@
     "appInsightsName": "[concat(variables('naming'), 'appins')]",
     "logAnalyticsName": "[concat(variables('naming'), 'logs')]",
     "apimName": "[concat(variables('naming'), 'apim')]",
-    "openAiName": "[concat(variables('naming'), 'oai-', substring(variables('uniqueSuffix'), 0, 4))]",
+    "aiHubName": "[concat(parameters('aiFoundryHubName'), '-', substring(variables('uniqueSuffix'), 0, 4))]",
+    "aiProjectName": "[concat(parameters('aiFoundryProjectName'), '-', substring(variables('uniqueSuffix'), 0, 4))]",
     "msiName": "[concat(variables('naming'), 'msi')]",
     "containerGroupName": "[concat(variables('naming'), 'container')]",
     "vnetPrefix": "10.0.0.0/16",
@@ -231,8 +247,8 @@
       "apiVersion": "2023-06-01-preview",
       "name": "[variables('acrName')]",
       "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard"
+        "sku": {
+        "name": "[parameters('containerRegistrySku')]"
       },
       "properties": {
         "adminUserEnabled": false,
@@ -296,21 +312,48 @@
       }
     },
     {
-      "type": "Microsoft.CognitiveServices/accounts",
-      "apiVersion": "2023-10-01-preview",
-      "name": "[variables('openAiName')]",
+      "type": "Microsoft.MachineLearningServices/workspaces",
+      "apiVersion": "2024-01-01-preview",
+      "name": "[variables('aiHubName')]",
       "location": "[parameters('location')]",
-      "kind": "OpenAI",
-      "sku": {
-        "name": "[parameters('skuOpenAI')]"
+      "identity": {
+        "type": "SystemAssigned"
       },
       "properties": {
-        "customSubDomainName": "[tolower(variables('openAiName'))]",
-        "networkAcls": {
-          "defaultAction": "Allow"
-        },
+        "friendlyName": "AI Modernizer Hub",
+        "description": "Azure AI Foundry Hub for AI Apps Modernizer",
+        "storageAccount": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "keyVault": "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]",
+        "applicationInsights": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "hbiWorkspace": false,
+        "publicNetworkAccess": "Enabled",
+        "v1LegacyMode": false,
+        "kind": "Hub"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.MachineLearningServices/workspaces",
+      "apiVersion": "2024-01-01-preview",
+      "name": "[variables('aiProjectName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "friendlyName": "AI Modernizer Project",
+        "description": "Azure AI Foundry Project for AI apps",
+        "parentWorkspaceResourceId": "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiHubName'))]",
+        "hbiWorkspace": false,
         "publicNetworkAccess": "Enabled"
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiHubName'))]"
+      ]
     },
     {
       "type": "Microsoft.ApiManagement/service",
@@ -393,16 +436,16 @@
               ],
               "environmentVariables": [
                 {
-                  "name": "FOUNDRY_MODEL_DEPLOYMENT_NAME",
-                  "secureValue": "gpt-4o"
+                  "name": "FOUNDRY_PROJECT_NAME",
+                  "value": "[variables('aiProjectName')]"
                 },
                 {
-                  "name": "AZURE_OPENAI_KEY",
-                  "secureValue": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiName')), '2023-10-01-preview').key1]"
+                  "name": "FOUNDRY_HUB_NAME",
+                  "value": "[variables('aiHubName')]"
                 },
                 {
-                  "name": "AZURE_OPENAI_ENDPOINT",
-                  "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiName')), '2023-10-01-preview').endpoint]"
+                  "name": "AZURE_AI_FOUNDRY_PROJECT_ENDPOINT",
+                  "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiProjectName')), '2024-01-01-preview').discoveryUrl]"
                 }
               ]
             }
@@ -450,9 +493,17 @@
       "type": "string",
       "value": "[concat('https://', variables('apimName'), '.azure-api.net')]"
     },
-    "openAiEndpoint": {
+    "aiFoundryHubId": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiName')), '2023-10-01-preview').endpoint]"
+      "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiHubName'))]"
+    },
+    "aiFoundryProjectId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiProjectName'))]"
+    },
+    "aiFoundryProjectEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiProjectName')), '2024-01-01-preview').discoveryUrl]"
     }
   }
 }

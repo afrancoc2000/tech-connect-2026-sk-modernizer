@@ -23,9 +23,6 @@
     "modelDeploymentName": {
       "value": "gpt-4o"
     },
-    "skuOpenAI": {
-      "value": "S0"
-    },
     "vmSize": {
       "value": "2"
     },
@@ -37,6 +34,9 @@
     },
     "apiManagementSku": {
       "value": "Developer"
+    },
+    "containerRegistrySku": {
+      "value": "Basic"
     },
     "tags": {
       "value": {
