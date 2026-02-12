@@ -1,0 +1,58 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Minimal ARM Template to test Container Registry deployment",
+    "author": "Cloud Architecture Team",
+    "version": "1.0.0"
+  },
+  "parameters": {
+    "acrName": {
+      "type": "string",
+      "defaultValue": "acrappmodv4cus",
+      "metadata": {
+        "description": "Name of the Azure Container Registry"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "centralus",
+      "metadata": {
+        "description": "Azure region for the Container Registry"
+      }
+    },
+    "acrSku": {
+      "type": "string",
+      "defaultValue": "Standard",
+      "allowedValues": ["Standard", "Premium"],
+      "metadata": {
+        "description": "SKU tier for Container Registry"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2025-11-01",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('acrSku')]"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled"
+      }
+    }
+  ],
+  "outputs": {
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2025-11-01').loginServer]"
+    },
+    "acrId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
+    }
+  }
+}

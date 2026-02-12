@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Child Template - API Management"
+  },
+  "parameters": {
+    "apimName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "apiManagementSku": {
+      "type": "string",
+      "defaultValue": "Developer"
+    },
+    "vnetName": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ApiManagement/service",
+      "apiVersion": "2023-03-01-preview",
+      "name": "[parameters('apimName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+      ],
+      "sku": {
+        "name": "[parameters('apiManagementSku')]",
+        "capacity": 1
+      },
+      "properties": {
+        "publisherName": "AI Apps Modernizer",
+        "publisherEmail": "admin@example.com"
+      }
+    }
+  ],
+  "outputs": {
+    "apimId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ApiManagement/service', parameters('apimName'))]"
+    },
+    "apimGatewayUrl": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ApiManagement/service', parameters('apimName')), '2023-03-01-preview').gatewayUrl]"
+    }
+  }
+}
