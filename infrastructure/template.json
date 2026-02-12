@@ -244,10 +244,10 @@
     },
     {
       "type": "Microsoft.ContainerRegistry/registries",
-      "apiVersion": "2023-06-01-preview",
+      "apiVersion": "2024-04-01",
       "name": "[variables('acrName')]",
       "location": "[parameters('location')]",
-        "sku": {
+      "sku": {
         "name": "[parameters('containerRegistrySku')]"
       },
       "properties": {
