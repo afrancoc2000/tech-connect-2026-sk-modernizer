@@ -63,17 +63,21 @@ The infrastructure includes the following Azure services:
 
 ### Option 1: Deploy via Azure Portal (Recommended for POC)
 
-1. Open [deploy.html](./deploy.html) in a web browser
-2. Configure deployment parameters:
-   - **Project Name**: Unique identifier (3-11 chars, lowercase)
-   - **Environment**: poc, dev, staging, or prod
-   - **Azure Region**: Choose your preferred region
-   - **Container Instances**: Number of replicas (1-5)
-   - **API Management SKU**: Developer (recommended for POC)
-3. Click "Deploy to Azure" button
-4. You'll be redirected to Azure Portal with the template pre-filled
-5. Review and customize parameters if needed
-6. Click "Review + Create" → "Create"
+1. Click the **Deploy to Azure** button:
+   [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fafrancoc2000%2Ftech-connect-2026-sk-modernizer%2Fmain%2Finfrastructure%2Ftemplate.json)
+
+2. You'll be taken to Azure Portal where you can:
+   - Select your subscription
+   - Create or select a resource group
+   - Configure deployment parameters:
+     - **Project Name**: Unique identifier (3-11 chars, lowercase)
+     - **Environment**: poc, dev, staging, or prod
+     - **Location**: Choose your preferred region
+     - **Container Instances**: Number of replicas (1-5)
+     - **API Management SKU**: Developer (recommended for POC)
+3. Click **Review + Create**
+4. Review the resources and costs
+5. Click **Create** to start deployment (~15-20 minutes)
 
 ### Option 2: Deploy via Azure CLI
 

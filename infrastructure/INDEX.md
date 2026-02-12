@@ -6,19 +6,17 @@ Welcome to the complete infrastructure deployment package for the AI Agent Code 
 
 If you're new to this package, follow this reading order:
 
-1. **[README.md](README.md)** - Start here for overview
+1. **[README.md](README.md)** - Start here for overview with Deploy button
 2. **[INFRASTRUCTURE_SUMMARY.md](INFRASTRUCTURE_SUMMARY.md)** - What's included
-3. **[deploy.html](deploy.html)** - Open in browser to deploy
-4. **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Common operations
-5. **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Detailed instructions
-6. **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Problem solving
+3. **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Common operations
+4. **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Detailed instructions
+5. **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Problem solving
 
 ---
 
 ## 📁 File Organization
 
 ### 🚀 Deployment & Configuration
-- **[deploy.html](deploy.html)** - Interactive web UI for deploying to Azure
 - **[template.json](template.json)** - ARM template with all Azure resources
 - **[parameters.json](parameters.json)** - Default parameter values
 - **[deploy-infrastructure.ps1](deploy-infrastructure.ps1)** - PowerShell deployment script
@@ -43,12 +41,10 @@ If you're new to this package, follow this reading order:
 
 ## ⚡ Quick Start (5 minutes)
 
-### Option 1: Web Interface (Easiest)
-```
-1. Open deploy.html in your web browser
-2. Configure deployment parameters
-3. Click "Deploy to Azure" button
-4. Complete in Azure Portal
+### Option 1: Azure Portal (Easiest)
+1. Go to [README.md](README.md) and click the **Deploy to Azure** button
+2. Configure parameters in Azure Portal
+3. Click **Create** to deploy (~15-20 minutes)
 ```
 
 ### Option 2: PowerShell (Windows)

@@ -10,29 +10,28 @@
 📦 INFRASTRUCTURE PACKAGE SUMMARY
 ═══════════════════════════════════════════════════════════════════════
 
-✅ 15 FILES CREATED
+✅ 14 FILES CREATED
 ─────────────────────
 
-DEPLOYMENT & CONFIGURATION (5 files)
+DEPLOYMENT & CONFIGURATION (4 files)
   1. template.json                  - Complete ARM template (~600 lines)
   2. parameters.json                - Default POC parameters
-  3. deploy.html                    - Interactive web deployment UI
-  4. deploy-infrastructure.ps1      - PowerShell deployment script
-  5. deploy-summary.sh              - Bash diagnostic script
+  3. deploy-infrastructure.ps1      - PowerShell deployment script
+  4. deploy-summary.sh              - Bash diagnostic script
 
 DOCUMENTATION (6 files)
-  6. INDEX.md                       - This package index
-  7. README.md                      - Overview & quick start
-  8. INFRASTRUCTURE_SUMMARY.md      - Complete summary & guide
-  9. DEPLOYMENT_GUIDE.md            - Detailed deployment instructions
-  10. QUICK_REFERENCE.md            - Common commands & operations
-  11. TROUBLESHOOTING.md            - Issues & solutions
+  5. INDEX.md                       - This package index
+  6. README.md                      - Overview & quick start
+  7. INFRASTRUCTURE_SUMMARY.md      - Complete summary & guide
+  8. DEPLOYMENT_GUIDE.md            - Detailed deployment instructions
+  9. QUICK_REFERENCE.md             - Common commands & operations
+  10. TROUBLESHOOTING.md            - Issues & solutions
 
 CONTAINER & LOCAL DEVELOPMENT (4 files)
-  12. docker-compose.yml            - Local development environment
-  13. Dockerfile                    - Multi-stage container image
-  14. nginx.conf                    - API gateway configuration
-  15. prometheus.yml                - Monitoring configuration
+  11. docker-compose.yml            - Local development environment
+  12. Dockerfile                    - Multi-stage container image
+  13. nginx.conf                    - API gateway configuration
+  14. prometheus.yml                - Monitoring configuration
 
 
 🏗️  DEPLOYED INFRASTRUCTURE
@@ -114,11 +113,12 @@ TOTAL ESTIMATED MONTHLY:                 $140-200
 🚀 QUICK START GUIDE
 ═══════════════════════════════════════════════════════════════════════
 
-OPTION 1: Web Interface (RECOMMENDED)
-  1. Open: infrastructure/deploy.html in your browser
-  2. Configure parameters
-  3. Click: "Deploy to Azure" button
-  4. Time: 15-20 minutes
+OPTION 1: Deploy to Azure Button (RECOMMENDED)
+  1. Go to: README.md in this directory
+  2. Click: "Deploy to Azure" button
+  3. Configure parameters in Azure Portal
+  4. Click: "Create" to deploy
+  5. Time: 15-20 minutes
 
 OPTION 2: PowerShell (Windows)
   .\deploy-infrastructure.ps1 -ProjectName "aiappsmod" -Environment "poc"
@@ -142,9 +142,9 @@ START HERE:
 
 FIRST-TIME DEPLOYMENT:
   → README.md
-    Architecture, quick start, features
-  → deploy.html
-    Interactive web interface (easiest method)
+    Architecture, quick start, and Deploy button
+  → DEPLOYMENT_GUIDE.md
+    Step-by-step instructions for all deployment methods
 
 DETAILED INSTRUCTIONS:
   → DEPLOYMENT_GUIDE.md

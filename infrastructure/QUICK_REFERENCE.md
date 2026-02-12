@@ -6,7 +6,6 @@
 |------|---------|
 | `template.json` | Complete ARM template with all Azure resources |
 | `parameters.json` | Default parameter values |
-| `deploy.html` | Web-based deployment UI (open in browser) |
 | `deploy-infrastructure.ps1` | PowerShell deployment script (Windows) |
 | `deploy-summary.sh` | Bash script to view deployment status |
 | `docker-compose.yml` | Local development environment |
@@ -19,11 +18,8 @@
 
 ## 🚀 Quick Deploy (5 minutes)
 
-### Option 1: Web UI (Easiest)
-```
-Open: deploy.html in your web browser
-Click: Deploy to Azure button
-```
+### Option 1: Deploy to Azure Button (Recommended)
+Click the **Deploy to Azure** button in [README.md](README.md) to deploy directly to Azure Portal. This is the fastest way to get started.
 
 ### Option 2: PowerShell (Windows)
 ```powershell

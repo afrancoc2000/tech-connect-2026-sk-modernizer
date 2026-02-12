@@ -2,13 +2,17 @@
 
 This directory contains all the infrastructure definitions for deploying the AI Agent Code Modernizer application to Azure.
 
+## � Deploy to Azure
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fafrancoc2000%2Ftech-connect-2026-sk-modernizer%2Fmain%2Finfrastructure%2Ftemplate.json)
+[![Deploy to Azure Gov](https://aka.ms/deploytoazuregovbutton)](https://portal.azure.us/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fafrancoc2000%2Ftech-connect-2026-sk-modernizer%2Fmain%2Finfrastructure%2Ftemplate.json)
+
 ## 📁 Files Overview
 
 | File | Purpose |
 |------|---------|
 | **template.json** | ARM template with all Azure resources |
 | **parameters.json** | Default parameters for the ARM template |
-| **deploy.html** | Interactive web UI for deploying to Azure |
 | **Dockerfile** | Container image for the AI Modernizer app |
 | **docker-compose.yml** | Local development environment setup |
 | **DEPLOYMENT_GUIDE.md** | Comprehensive deployment instructions |
@@ -17,12 +21,16 @@ This directory contains all the infrastructure definitions for deploying the AI 
 
 ## 🚀 Quick Start
 
-### Option 1: Deploy via Web Interface (Easiest)
+### Option 1: Deploy via Azure Portal (Easiest)
 
-1. Open `deploy.html` in your web browser
-2. Configure your deployment parameters
-3. Click "Deploy to Azure" button
-4. Complete the deployment in Azure Portal
+1. Click the **"Deploy to Azure"** button above
+2. Configure your parameters in the Azure Portal:
+   - Resource Group
+   - Location
+   - Project Name
+   - Environment
+3. Click **"Review + Create"**
+4. Click **"Create"** to start deployment (~15-20 minutes)
 
 ### Option 2: Deploy via CLI
 
