@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectName": {
+      "value": "aiappsmod"
+    },
+    "environment": {
+      "value": "poc"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "containerImageUri": {
+      "value": ""
+    },
+    "aiFoundryProjectName": {
+      "value": "aimodernizer-project"
+    },
+    "aiFoundryHubName": {
+      "value": "aimodernizer-hub"
+    },
+    "modelDeploymentName": {
+      "value": "gpt-4o"
+    },
+    "skuOpenAI": {
+      "value": "S0"
+    },
+    "vmSize": {
+      "value": "2"
+    },
+    "memoryInGb": {
+      "value": "1.5"
+    },
+    "containerInstances": {
+      "value": 2
+    },
+    "apiManagementSku": {
+      "value": "Developer"
+    },
+    "tags": {
+      "value": {
+        "project": "AIAppsModernizer",
+        "environment": "poc",
+        "createdBy": "ARM-Template",
+        "costCenter": "Engineering",
+        "department": "Cloud Architecture"
+      }
+    }
+  }
+}
