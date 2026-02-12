@@ -24,19 +24,19 @@ load_dotenv()
 def get_random_joke_topic() -> str:
     """Returns a random topic for jokes."""
     topics = [
-        "programadores", "inteligencia artificial", "gatos",
-        "café", "reuniones de trabajo", "bugs en el código",
-        "machine learning", "la nube", "Python vs JavaScript",
-        "Stack Overflow", "commits de Git", "debugging"
+        "programmers", "artificial intelligence", "cats",
+        "coffee", "work meetings", "code bugs",
+        "machine learning", "the cloud", "Python vs JavaScript",
+        "Stack Overflow", "Git commits", "debugging"
     ]
-    return f"Tema seleccionado: {random.choice(topics)}"
+    return f"Selected topic: {random.choice(topics)}"
 
 
 def rate_joke(joke: str) -> str:
     """Rates a joke from 1 to 10."""
     rating = random.randint(5, 10)
     emojis = "😄" * (rating // 2)
-    return f"Calificación: {rating}/10 {emojis}"
+    return f"Rating: {rating}/10 {emojis}"
 
 
 async def main():
@@ -62,50 +62,50 @@ async def main():
     # Create tools
     topic_tool = FunctionTool(
         get_random_joke_topic,
-        description="Obtiene un tema aleatorio para contar un chiste"
+        description="Gets a random topic for telling a joke"
     )
     
     rate_tool = FunctionTool(
         rate_joke,
-        description="Califica un chiste del 1 al 10"
+        description="Rates a joke from 1 to 10"
     )
     
     # Create the comedian agent
     comedian_agent = AssistantAgent(
-        name="Comediante",
+        name="Comedian",
         model_client=model_client,
         tools=[topic_tool],
         system_message="""
-        Eres un comediante profesional que cuenta chistes muy divertidos en español.
+        You are a professional comedian who tells very funny jokes.
         
-        Cuando te pidan un chiste:
-        1. Usa la herramienta get_random_joke_topic para obtener un tema
-        2. Cuenta un chiste creativo y divertido sobre ese tema
-        3. Termina tu turno para que el crítico evalúe tu chiste
+        When asked for a joke:
+        1. Use the get_random_joke_topic tool to get a topic
+        2. Tell a creative and funny joke about that topic
+        3. End your turn so the critic can evaluate your joke
         
-        Sé creativo, usa juegos de palabras y humor inteligente.
+        Be creative, use wordplay and clever humor.
         """,
     )
     
     # Create the critic agent
     critic_agent = AssistantAgent(
-        name="Critico",
+        name="Critic",
         model_client=model_client,
         tools=[rate_tool],
         system_message="""
-        Eres un crítico de comedia que evalúa chistes.
+        You are a comedy critic who evaluates jokes.
         
-        Cuando el comediante cuente un chiste:
-        1. Usa la herramienta rate_joke para dar una calificación
-        2. Proporciona una breve crítica constructiva
-        3. Di "APROBADO" si el chiste merece más de 7 puntos, o "TERMINADO" para finalizar
+        When the comedian tells a joke:
+        1. Use the rate_joke tool to give a rating
+        2. Provide brief constructive feedback
+        3. Say "APPROVED" if the joke deserves more than 7 points, or "DONE" to finish
         
-        Sé justo pero divertido en tus críticas.
+        Be fair but funny in your reviews.
         """,
     )
     
     # Create termination condition
-    termination = TextMentionTermination("TERMINADO")
+    termination = TextMentionTermination("DONE")
     
     # Create the team with round-robin chat
     team = RoundRobinGroupChat(
@@ -114,16 +114,16 @@ async def main():
         max_turns=6,
     )
     
-    print("🎭 Sistema de Chistes con AutoGen")
+    print("🎭 Joke System with AutoGen")
     print("=" * 50)
-    print("Agentes: Comediante 🎤 y Crítico 📝")
-    print("Escribe 'salir' para terminar\n")
+    print("Agents: Comedian 🎤 and Critic 📝")
+    print("Type 'exit' to quit\n")
     
     while True:
-        user_input = input("Tú: ").strip()
+        user_input = input("You: ").strip()
         
         if user_input.lower() in ['salir', 'exit', 'quit']:
-            print("¡Hasta luego! 👋")
+            print("Goodbye! 👋")
             break
         
         if not user_input:

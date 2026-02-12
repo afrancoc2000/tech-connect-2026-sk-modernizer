@@ -30,9 +30,9 @@ class JokePlugin:
         """Get a random joke topic."""
         import random
         topics = [
-            "programadores", "inteligencia artificial", "gatos", 
-            "café", "reuniones de trabajo", "bugs en el código",
-            "machine learning", "la nube", "Python vs JavaScript"
+            "programmers", "artificial intelligence", "cats", 
+            "coffee", "work meetings", "code bugs",
+            "machine learning", "the cloud", "Python vs JavaScript"
         ]
         return random.choice(topics)
     
@@ -44,7 +44,7 @@ class JokePlugin:
         """Rate the quality of a joke."""
         import random
         rating = random.randint(6, 10)
-        return f"Rating: {rating}/10 - {'¡Excelente!' if rating >= 8 else '¡Bueno!'}"
+        return f"Rating: {rating}/10 - {'Excellent!' if rating >= 8 else 'Good!'}"
 
 
 async def main():
@@ -76,26 +76,26 @@ async def main():
     # Create chat history
     history = ChatHistory()
     history.add_system_message("""
-    Eres un comediante experto que cuenta chistes divertidos en español.
-    Cuando te pidan un chiste, primero usa la función get_joke_topic para obtener un tema,
-    luego cuenta un chiste sobre ese tema.
-    Después de contar el chiste, usa la función rate_joke para calificarlo.
-    Sé creativo y divertido!
+    You are an expert comedian who tells funny jokes.
+    When asked for a joke, first use the get_joke_topic function to get a topic,
+    then tell a joke about that topic.
+    After telling the joke, use the rate_joke function to rate it.
+    Be creative and funny!
     """)
     
-    print("🎭 Agente de Chistes con Semantic Kernel")
+    print("🎭 Joke Agent with Semantic Kernel")
     print("=" * 50)
-    print("Escribe 'salir' para terminar\n")
+    print("Type 'exit' to quit\n")
     
     # Configure function calling
     execution_settings = kernel.get_prompt_execution_settings_from_service_id(chat_service.service_id)
     execution_settings.function_choice_behavior = FunctionChoiceBehavior.Auto()
     
     while True:
-        user_input = input("Tú: ").strip()
+        user_input = input("You: ").strip()
         
         if user_input.lower() in ['salir', 'exit', 'quit']:
-            print("¡Hasta luego! 👋")
+            print("Goodbye! 👋")
             break
         
         if not user_input:
@@ -114,7 +114,7 @@ async def main():
         if result:
             response = result[0].content
             history.add_assistant_message(response)
-            print(f"\n🤖 Agente: {response}\n")
+            print(f"\n🤖 Agent: {response}\n")
 
 
 if __name__ == "__main__":
