@@ -1,0 +1,13 @@
+# Semantic Kernel
+semantic-kernel>=1.0.0
+
+# AutoGen
+autogen-agentchat>=0.4.0
+autogen-ext[openai]>=0.4.0
+
+# Azure OpenAI
+openai>=1.0.0
+azure-identity>=1.15.0
+
+# Environment variables
+python-dotenv>=1.0.0

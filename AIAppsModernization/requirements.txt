@@ -1,0 +1,24 @@
+# Microsoft Agent Framework - Pin specific versions to avoid breaking changes
+agent-framework-azure-ai==1.0.0b260107
+agent-framework-core==1.0.0b260107
+
+# Azure Identity for authentication
+azure-identity>=1.15.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# MCP server capabilities
+mcp>=1.0.0
+
+# For debugging support
+debugpy>=1.8.0
+agent-dev-cli
+
+# HTTP Server mode
+azure-ai-agentserver-agentframework==1.0.0b10
+azure-ai-agentserver-core==1.0.0b10
+
+# Code analysis
+tree-sitter>=0.20.0
+tree-sitter-python>=0.20.0

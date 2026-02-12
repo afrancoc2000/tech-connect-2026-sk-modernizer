@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "code-modernizer": {
+            "command": "python",
+            "args": ["main.py"],
+            "cwd": "${workspaceFolder}/AIAppsModernization",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/AIAppsModernization"
+            }
+        }
+    }
+}
