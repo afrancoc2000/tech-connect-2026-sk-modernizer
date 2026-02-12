@@ -1,0 +1,79 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "type": "string", "defaultValue": "eastus" },
+    "acrName": { "type": "string", "defaultValue": "myContainerRegistry" },
+    "containerAppEnvName": { "type": "string", "defaultValue": "myContainerAppEnv" },
+    "containerAppName": { "type": "string", "defaultValue": "my-container-app" },
+    "containerImage": { "type": "string", "defaultValue": "python:3.3-slim" },
+    "apimName": { "type": "string", "defaultValue": "my-apim-service" },
+    "publisherEmail": { "type": "string", "defaultValue": "admin@example.com" },
+    "publisherName": { "type": "string", "defaultValue": "Contoso" },
+    "logAnalyticsName": { "type": "string", "defaultValue": "my-logs" }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2019-12-01-preview",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Standard" },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2020-08-01",
+      "name": "[parameters('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('containerAppEnvName')]",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('containerAppName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvName'))]"
+      ],
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', parameters('containerAppEnvName'))]",
+        "configuration": {},
+        "template": {
+          "containers": [
+            {
+              "name": "app",
+              "image": "[parameters('containerImage')]",
+              "resources": { "cpu": 0.25, "memory": "0.5Gi" }
+            }
+          ],
+          "scale": { "minReplicas": 1, "maxReplicas": 1 }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.ApiManagement/service",
+      "apiVersion": "2021-01-01-preview",
+      "name": "[parameters('apimName')]",
+      "location": "[parameters('location')]",
+      "sku": { "name": "Developer", "capacity": 1 },
+      "properties": {
+        "publisherEmail": "[parameters('publisherEmail')]",
+        "publisherName": "[parameters('publisherName')]"
+      }
+    }
+  ],
+  "outputs": {
+    "acrLoginServer": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))).loginServer]"
+    }
+  }
+}
