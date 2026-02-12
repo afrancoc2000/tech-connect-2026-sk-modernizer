@@ -85,10 +85,10 @@
     },
     "containerRegistrySku": {
       "type": "string",
-      "defaultValue": "Basic",
-      "allowedValues": ["Basic", "Standard", "Premium"],
+      "defaultValue": "Standard",
+      "allowedValues": ["Standard", "Premium"],
       "metadata": {
-        "description": "Container Registry SKU tier (Basic for POC/dev, Standard for production)"
+        "description": "Container Registry SKU tier (Standard for POC/dev, Premium for production)"
       }
     }
   },
@@ -352,7 +352,10 @@
         "publicNetworkAccess": "Enabled"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiHubName'))]"
+        "[resourceId('Microsoft.MachineLearningServices/workspaces', variables('aiHubName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('kvName'))]",
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
       ]
     },
     {
