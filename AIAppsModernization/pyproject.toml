@@ -1,0 +1,38 @@
+[project]
+name = "ai-code-modernizer"
+version = "0.1.0"
+description = "AI Agent Code Modernizer — MCP-exposed agent that modernizes Semantic Kernel and AutoGen code to Microsoft Agent Framework"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+dependencies = [
+    "agent-framework-azure-ai==1.0.0b260107",
+    "agent-framework-core==1.0.0b260107",
+    "azure-identity>=1.15.0",
+    "python-dotenv>=1.0.0",
+    "mcp>=1.0.0",
+    "azure-ai-agentserver-agentframework==1.0.0b10",
+    "azure-ai-agentserver-core==1.0.0b10",
+    "tree-sitter>=0.20.0",
+    "tree-sitter-python>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "debugpy>=1.8.0",
+    "agent-dev-cli",
+]
+
+[project.scripts]
+modernizer = "main:main"
+
+[tool.uv]
+prerelease = "allow"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

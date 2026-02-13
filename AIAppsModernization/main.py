@@ -115,8 +115,9 @@ Help developers migrate their AI agent applications by analyzing code patterns, 
             tools=get_tools(),
         ) as agent,
     ):
+        port = os.getenv("AGENT_SERVER_PORT", "8088")
         print("Starting Code Modernizer HTTP Server...")
-        print("Server running on http://localhost:8087")
+        print(f"Server running on http://localhost:{port}")
         print("Use AI Toolkit Agent Inspector to test the agent")
         
         # Run as HTTP server
@@ -148,8 +149,8 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=8087,
-        help="Port for HTTP server mode (default: 8087)"
+        default=8088,
+        help="Port for HTTP server mode (default: 8088)"
     )
     
     args = parser.parse_args()

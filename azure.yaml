@@ -1,0 +1,27 @@
+name: agent-flow
+metadata:
+  template: agent-flow
+
+infra:
+  provider: terraform
+  path: ./infra/terraform
+
+hooks:
+  preprovision:
+    shell: sh
+    run: |
+      ENV_NAME="${AZURE_ENV_NAME:-dev}"
+      SOURCE="./infra/terraform/environments/${ENV_NAME}.tfvars.json"
+      TARGET="./infra/terraform/main.tfvars.json"
+      if [ ! -f "$SOURCE" ]; then
+        echo "ERROR: Environment file not found: $SOURCE"
+        echo "Available environments: $(ls ./infra/terraform/environments/)"
+        exit 1
+      fi
+      echo "Using environment: ${ENV_NAME} → ${SOURCE}"
+      cp "$SOURCE" "$TARGET"
+    continueOnError: false
+  postprovision:
+    shell: sh
+    run: ./infra/terraform/scripts/postprovision.sh
+    continueOnError: false
