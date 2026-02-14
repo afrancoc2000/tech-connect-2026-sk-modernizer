@@ -40,6 +40,19 @@ The [Agent Portal](https://github.com/misantibanez/AI-MAF-AGENT-CREATION) is a w
 
 ![Agent Portal Frontend](docs/agent-portal.png)
 
+## 🤖 ModernMint Agents
+
+Custom GitHub Copilot agents with built-in memory, domain rules, and step-by-step instructions for performing modernizations. They encode the knowledge of how to analyze SK/AutoGen codebases and produce structured modernization artifacts:
+
+| Agent | Purpose |
+|-------|--------|
+| `@modernmint-spec` | Scans the codebase and produces a modernization specification — defines **what** needs to change |
+| `@modernmint-planner` | Reads the spec and generates a phased implementation plan — defines **how** to modernize step-by-step |
+
+Each agent follows embedded instruction files (`.github/instructions/`) that define pattern recognition rules, migration mappings, and quality checklists. This enables consistent, repeatable modernizations across projects of any complexity.
+
+Example outputs are included under `docs/specs/` and `plans/` (5-phase plan with quality checklists). Multi-AI support files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `SKILL.md`) ensure the agents work across GitHub Copilot, Claude, and Gemini.
+
 ## 🛠️ Tools
 
 The agent exposes three tools via MCP:
@@ -114,8 +127,11 @@ Add to `.vscode/mcp.json`:
 ├── SemanticKernelSamples/
 │   ├── joke_agent_sk.py        # Sample SK app (input for testing)
 │   └── joke_agent_autogen.py   # Sample AutoGen app (input for testing)
+├── .github/agents/              # ModernMint custom Copilot agents
+├── docs/specs/                  # Example modernization specification
+├── plans/                       # 5-phase implementation plan with checklists
 ├── infrastructure/
-│   └── template.json           # ARM template (Container Apps, APIM, ACR)
+│   └── template.json            # ARM template (Container Apps, APIM, ACR)
 └── docs/
     ├── architecture.png
     └── agent-portal.png
