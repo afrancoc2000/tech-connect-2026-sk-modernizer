@@ -308,3 +308,56 @@ module "avm-res-apimanagement-service" {
     module.nsg_apim,
   ]
 }
+
+# ==============================================================================
+# API Management — APIs Deployment (OpenAPI import + policies)
+# ==============================================================================
+
+module "apim_apis" {
+  count  = var.apim_enabled && var.apim_deploy_apis ? 1 : 0
+  source = "./modules/azure-apim-apis-deployment"
+
+  resource_group_name = local.resource_group.name
+  apim_name           = local.apim_name_unique
+  tenant_id           = data.azurerm_client_config.current.tenant_id
+
+  # Backend URL del Container App — se inyecta automáticamente en las políticas XML
+  default_backend_url = "https://${var.agent_name}.${module.azure-container-apps-environments.default_domain}"
+
+  backend_apis = {
+    agents-api = {
+      name             = "agents-api"
+      display_name     = "Code Modernizer Agent API"
+      path             = "modernizer"
+      protocols        = ["https"]
+      openapi_format   = "openapi"
+      openapi_content  = file("${path.root}/../../AIAppsModernization/openapi.yaml")
+      backend_url      = ""
+
+      jwt_enabled         = false
+      jwt_audience        = ""
+      jwt_issuer          = ""
+      jwt_required_claims = {}
+
+      rate_limit_calls  = 100
+      rate_limit_period = 60
+
+      subscription_required   = false
+      subscription_key_header = "Ocp-Apim-Subscription-Key"
+      subscription_key_query  = "subscription-key"
+    }
+  }
+
+  # MCP Server — expone la API como servidor MCP (Streamable HTTP)
+  mcp_enabled           = var.mcp_enabled
+  mcp_server_name       = var.mcp_server_name
+  mcp_display_name      = var.mcp_display_name
+  mcp_description       = var.mcp_description
+  mcp_path              = var.mcp_path
+  mcp_tools             = var.mcp_tools
+
+  depends_on = [
+    module.avm-res-apimanagement-service,
+    module.azure-container-apps-environments,
+  ]
+}

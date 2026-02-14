@@ -1,0 +1,33 @@
+<policies>
+    <inbound>
+        <base />
+        <!-- Configuración de CORS -->
+        <cors>
+            <allowed-origins>
+                <origin>*</origin>
+            </allowed-origins>
+            <allowed-methods>
+                <method>*</method>
+            </allowed-methods>
+            <allowed-headers>
+                <header>*</header>
+            </allowed-headers>
+            <expose-headers>
+                <header>*</header>
+            </expose-headers>
+        </cors>
+        <set-backend-service base-url="${backend_url}" />
+    </inbound>
+    <!-- Controlar cómo se procesan las solicitudes -->
+    <backend>
+        <base />
+    </backend>
+    <!-- Personalizar las respuestas -->
+    <outbound>
+        <base />
+    </outbound>
+    <!-- Manejar excepciones y personalizar errores -->
+    <on-error>
+        <base />
+    </on-error>
+</policies>

@@ -1,0 +1,557 @@
+openapi: 3.0.3
+info:
+  title: AI Agent Code Modernizer API
+  description: |
+    HTTP API for the **CodeModernizer** agent — an AI-powered service that analyzes
+    code written in Semantic Kernel or AutoGen and modernizes it to Microsoft Agent Framework (MAF).
+
+    The API follows the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses)
+    pattern with Azure-specific extensions. Served by `azure-ai-agentserver-core` (Starlette + Uvicorn).
+  version: 1.0.0-beta
+  contact:
+    name: Agent Migration Team
+    email: apim@contoso.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://{host}:{port}
+    description: Agent HTTP Server
+    variables:
+      host:
+        default: localhost
+      port:
+        default: "8088"
+
+tags:
+  - name: Agent
+    description: Execute the modernizer agent
+  - name: Health
+    description: Liveness and readiness probes
+
+paths:
+  /runs:
+    post:
+      operationId: createRun
+      summary: Execute agent run
+      description: |
+        Submit a prompt to the CodeModernizer agent. The agent analyzes code,
+        generates modernized equivalents, or returns migration guides using its built-in tools:
+        - `analyze_code_patterns` — detect SK/AutoGen patterns
+        - `generate_modernized_code` — produce MAF equivalent
+        - `get_migration_guide` — return framework migration docs
+      tags: [Agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResponseRequest"
+            examples:
+              simple_string:
+                summary: Simple text input
+                value:
+                  input: "Analyze this Semantic Kernel code and identify patterns to modernize."
+              message_array:
+                summary: Structured message array
+                value:
+                  input:
+                    - role: user
+                      content: "Analyze this code:\n\nfrom semantic_kernel import Kernel\nkernel = Kernel()"
+              with_streaming:
+                summary: Streaming response
+                value:
+                  input: "Generate modernized code for my AutoGen agent"
+                  stream: true
+              multi_turn:
+                summary: Multi-turn conversation
+                value:
+                  input:
+                    - role: user
+                      content: "Now generate the modernized version"
+                  previous_response_id: "resp_abc123"
+      responses:
+        "200":
+          description: Agent response (non-streaming)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+              example:
+                id: "resp_abc123def456"
+                object: response
+                status: completed
+                created_at: 1739500800
+                model: gpt-4.1
+                output:
+                  - type: message
+                    role: assistant
+                    content:
+                      - type: output_text
+                        text: "I detected **Semantic Kernel** patterns in your code..."
+                output_text: "I detected **Semantic Kernel** patterns in your code..."
+                usage:
+                  input_tokens: 150
+                  output_tokens: 340
+                  total_tokens: 490
+            text/event-stream:
+              schema:
+                type: string
+                description: SSE stream of ResponseStreamEvent objects
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /responses:
+    post:
+      operationId: createResponse
+      summary: Execute agent run (alias)
+      description: |
+        Identical to `POST /runs`. Both endpoints route to the same handler.
+        This alias follows the OpenAI Responses API naming convention.
+      tags: [Agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResponseRequest"
+      responses:
+        "200":
+          description: Agent response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentResponse"
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /liveness:
+    get:
+      operationId: liveness
+      summary: Liveness probe
+      description: Returns HTTP 200 if the process is alive. Used by container orchestrators.
+      tags: [Health]
+      responses:
+        "200":
+          description: Service is alive (empty body)
+
+  /readiness:
+    get:
+      operationId: readiness
+      summary: Readiness probe
+      description: Returns readiness status. Used by container orchestrators and load balancers.
+      tags: [Health]
+      responses:
+        "200":
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+              example:
+                status: ready
+
+components:
+  schemas:
+    # ── Request ────────────────────────────────────────────────────────────
+
+    CreateResponseRequest:
+      type: object
+      required: [input]
+      properties:
+        input:
+          description: |
+            The user prompt. Either a plain string or an array of input messages
+            with `role` and `content` fields.
+          oneOf:
+            - type: string
+              example: "Analyze this Semantic Kernel code for modernization"
+            - type: array
+              items:
+                $ref: "#/components/schemas/InputMessage"
+        stream:
+          type: boolean
+          default: false
+          description: |
+            If `true`, the response is delivered as a Server-Sent Events (SSE) stream
+            (`text/event-stream`). Keep-alive comments sent every 15 s.
+        instructions:
+          type: string
+          description: Override the agent's system instructions for this request.
+        model:
+          type: string
+          description: Override the model deployment name (e.g. `gpt-4.1`).
+        previous_response_id:
+          type: string
+          description: ID of a prior response for multi-turn conversations.
+        conversation:
+          description: Conversation reference for session continuity.
+          oneOf:
+            - type: string
+            - $ref: "#/components/schemas/ConversationParam"
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          maxProperties: 16
+          description: Up to 16 key-value pairs attached to the response.
+        temperature:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 2
+          description: Sampling temperature.
+        top_p:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Nucleus sampling probability mass.
+        max_output_tokens:
+          type: integer
+          description: Maximum number of tokens to generate.
+        max_tool_calls:
+          type: integer
+          description: Maximum total tool invocations allowed per run.
+        truncation:
+          type: string
+          enum: [auto, disabled]
+          description: Strategy when the conversation exceeds the context window.
+        tool_choice:
+          description: Tool selection strategy.
+          oneOf:
+            - type: string
+              enum: [auto, none, required]
+            - $ref: "#/components/schemas/ToolChoiceObject"
+        text:
+          $ref: "#/components/schemas/ResponseTextConfig"
+        background:
+          type: boolean
+          default: false
+          description: Run the agent in the background.
+        agent:
+          $ref: "#/components/schemas/AgentReference"
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolDefinition"
+          description: Additional tools to make available for this run.
+
+    InputMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant, system, developer]
+          description: The role of the message author.
+        content:
+          description: Message content — text or structured content parts.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                $ref: "#/components/schemas/ContentPart"
+
+    ContentPart:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [input_text, input_image, input_file]
+        text:
+          type: string
+        image_url:
+          type: string
+          format: uri
+        file_id:
+          type: string
+
+    AgentReference:
+      type: object
+      properties:
+        name:
+          type: string
+          example: CodeModernizer
+        version:
+          type: string
+        type:
+          type: string
+
+    ConversationParam:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Conversation identifier for session continuity.
+
+    ToolChoiceObject:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [function]
+        function:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+
+    ToolDefinition:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [function]
+        function:
+          type: object
+          required: [name]
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            parameters:
+              type: object
+              description: JSON Schema describing the function parameters.
+
+    ResponseTextConfig:
+      type: object
+      properties:
+        format:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [text, json_object, json_schema]
+            json_schema:
+              type: object
+              description: JSON Schema for structured output.
+
+    # ── Response ───────────────────────────────────────────────────────────
+
+    AgentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique response identifier.
+          example: resp_abc123def456
+        object:
+          type: string
+          enum: [response]
+        status:
+          type: string
+          enum: [completed, failed, in_progress, cancelled, queued, incomplete]
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp of creation.
+        model:
+          type: string
+          description: Model deployment used.
+          example: gpt-4.1
+        output:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutputItem"
+          description: Array of output items (messages, tool calls, etc.).
+        output_text:
+          type: string
+          description: Aggregated text from all output message items.
+        instructions:
+          description: Instructions used for this response.
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        usage:
+          $ref: "#/components/schemas/ResponseUsage"
+        error:
+          $ref: "#/components/schemas/ResponseError"
+        incomplete_details:
+          type: object
+          properties:
+            reason:
+              type: string
+        agent:
+          $ref: "#/components/schemas/AgentId"
+        conversation:
+          type: object
+          properties:
+            id:
+              type: string
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolDefinition"
+        temperature:
+          type: number
+          format: float
+        top_p:
+          type: number
+          format: float
+
+    OutputItem:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [message, function_call, function_call_output]
+        id:
+          type: string
+        role:
+          type: string
+          enum: [assistant]
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutputContentPart"
+        name:
+          type: string
+          description: Function name (for function_call type).
+        arguments:
+          type: string
+          description: JSON string of function arguments (for function_call type).
+        call_id:
+          type: string
+          description: Tool call ID (for function_call / function_call_output).
+        output:
+          type: string
+          description: Function output (for function_call_output type).
+        status:
+          type: string
+          enum: [completed, in_progress]
+
+    OutputContentPart:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [output_text]
+        text:
+          type: string
+
+    ResponseUsage:
+      type: object
+      properties:
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+        input_tokens_details:
+          type: object
+          properties:
+            cached_tokens:
+              type: integer
+        output_tokens_details:
+          type: object
+          properties:
+            reasoning_tokens:
+              type: integer
+
+    ResponseError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [server_error, rate_limit_error, invalid_request_error]
+        message:
+          type: string
+
+    AgentId:
+      type: object
+      properties:
+        name:
+          type: string
+          example: CodeModernizer
+        version:
+          type: string
+        type:
+          type: string
+
+    # ── SSE Stream Events (reference for stream: true) ─────────────────────
+
+    StreamEvent:
+      type: object
+      description: |
+        When `stream: true`, the response is delivered as Server-Sent Events.
+        Each SSE frame: `event: <type>\ndata: <JSON>\n\n`
+        Keep-alive comments (`: keep-alive`) sent every 15 seconds.
+      properties:
+        event:
+          type: string
+          enum:
+            - response.created
+            - response.in_progress
+            - response.output_item.added
+            - response.content_part.added
+            - response.text.delta
+            - response.text.done
+            - response.content_part.done
+            - response.output_item.done
+            - response.function_call_arguments.delta
+            - response.function_call_arguments.done
+            - response.completed
+            - response.failed
+            - response.error
+        data:
+          type: object
+          description: Event-specific payload.
+
+    # ── Health ─────────────────────────────────────────────────────────────
+
+    ReadinessResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+
+    # ── Error ──────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

@@ -24,6 +24,8 @@ To configure in VS Code for GitHub Copilot Chat:
 
 import argparse
 import asyncio
+import json as json_mod
+import logging
 import os
 import sys
 from typing import Annotated
@@ -33,6 +35,107 @@ from azure.identity.aio import DefaultAzureCredential
 
 # Load environment variables
 load_dotenv(override=True)
+
+logger = logging.getLogger("sanitize_payload")
+##
+#workound for APIM MCP translating null/empty fields as empty strings, which causes SDK crashes
+##
+
+class SanitizePayloadMiddleware:
+    """Raw ASGI middleware that normalizes fields APIM MCP sends as empty strings.
+
+    APIM's MCP-to-REST translation serializes optional object/array fields with
+    no value as empty strings ("") instead of null/{}. The agent server SDK
+    (AgentRunContextMiddleware) crashes when it calls .get() on a string.
+
+    This middleware wraps the Starlette app and intercepts POST /runs and
+    POST /responses to fix the payload before the SDK sees it.
+    """
+
+    # Fields that must be dict — convert "" to {}
+    _DICT_FIELDS = frozenset({"metadata"})
+    # Fields that must be dict/list/None — convert "" to None
+    _OBJECT_FIELDS = frozenset({"agent", "text"})
+    _LIST_FIELDS = frozenset({"tools"})
+    # Fields that should be removed when empty string
+    _STRIP_EMPTY = frozenset({
+        "instructions", "model", "previous_response_id",
+        "tool_choice", "truncation",
+    })
+    # Minimum length for a valid Foundry conversation ID (prefix + _ + partitionKey + entropy)
+    _MIN_FOUNDRY_ID_LEN = 55
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        method = scope.get("method", "GET")
+        if method != "POST" or path not in ("/runs", "/responses"):
+            await self.app(scope, receive, send)
+            return
+
+        # Buffer the full request body
+        body_parts = []
+        while True:
+            message = await receive()
+            body_parts.append(message.get("body", b""))
+            if not message.get("more_body", False):
+                break
+        raw_body = b"".join(body_parts)
+
+        # Parse, sanitize, re-serialize
+        try:
+            payload = json_mod.loads(raw_body)
+            if isinstance(payload, dict):
+                changed = False
+                for f in self._DICT_FIELDS:
+                    if f in payload and not isinstance(payload[f], dict):
+                        payload[f] = {}
+                        changed = True
+                for f in self._OBJECT_FIELDS:
+                    if f in payload and isinstance(payload[f], str) and payload[f] == "":
+                        payload[f] = None
+                        changed = True
+                for f in self._LIST_FIELDS:
+                    if f in payload and not isinstance(payload[f], list):
+                        payload[f] = None
+                        changed = True
+                for f in self._STRIP_EMPTY:
+                    if f in payload and isinstance(payload[f], str) and payload[f] == "":
+                        del payload[f]
+                        changed = True
+                # conversation: must be a valid Foundry ID (conv_<50+ chars>) or dict with id
+                # APIM MCP sends short strings like "session-1" that crash the SDK
+                if "conversation" in payload:
+                    conv = payload["conversation"]
+                    if isinstance(conv, str) and len(conv) < self._MIN_FOUNDRY_ID_LEN:
+                        del payload["conversation"]
+                        changed = True
+                    elif isinstance(conv, dict) and not conv.get("id"):
+                        del payload["conversation"]
+                        changed = True
+                if changed:
+                    logger.debug("Sanitized payload for %s", path)
+                    raw_body = json_mod.dumps(payload).encode("utf-8")
+        except (json_mod.JSONDecodeError, TypeError):
+            pass  # Let the downstream middleware handle invalid JSON
+
+        # Replace receive with one that returns the sanitized body
+        body_sent = False
+
+        async def patched_receive():
+            nonlocal body_sent
+            if not body_sent:
+                body_sent = True
+                return {"type": "http.request", "body": raw_body, "more_body": False}
+            return {"type": "http.disconnect"}
+
+        await self.app(scope, patched_receive, send)
 
 
 def get_tools():
@@ -115,13 +218,15 @@ Help developers migrate their AI agent applications by analyzing code patterns, 
             tools=get_tools(),
         ) as agent,
     ):
-        port = os.getenv("AGENT_SERVER_PORT", "8088")
+        port = os.getenv("AGENT_SERVER_PORT", "8087")
         print("Starting Code Modernizer HTTP Server...")
         print(f"Server running on http://localhost:{port}")
         print("Use AI Toolkit Agent Inspector to test the agent")
         
-        # Run as HTTP server
-        await from_agent_framework(agent).run_async()
+        # Run as HTTP server with payload sanitization for APIM MCP compatibility
+        server = from_agent_framework(agent)
+        server.app = SanitizePayloadMiddleware(server.app)
+        await server.run_async()
 
 
 async def run_cli():
@@ -149,8 +254,8 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=8088,
-        help="Port for HTTP server mode (default: 8088)"
+        default=8087,
+        help="Port for HTTP server mode (default: 8087)"
     )
     
     args = parser.parse_args()

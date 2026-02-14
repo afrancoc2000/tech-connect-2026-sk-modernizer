@@ -109,3 +109,20 @@ output "APIM_NAME" {
   description = "Name of the API Management instance"
   value       = var.apim_enabled ? local.apim_name_unique : null
 }
+
+# --- MCP Server outputs (conditional) ---
+
+output "MCP_ENABLED" {
+  description = "Whether MCP server was deployed"
+  value       = var.apim_enabled && var.apim_deploy_apis && var.mcp_enabled
+}
+
+output "MCP_ENDPOINT_URL" {
+  description = "MCP server endpoint URL (Streamable HTTP transport)"
+  value       = var.apim_enabled && var.apim_deploy_apis && var.mcp_enabled ? module.apim_apis[0].mcp_endpoint_url : null
+}
+
+output "MCP_SERVER_ID" {
+  description = "Resource ID of the MCP server API in APIM"
+  value       = var.apim_enabled && var.apim_deploy_apis && var.mcp_enabled ? module.apim_apis[0].mcp_server_id : null
+}

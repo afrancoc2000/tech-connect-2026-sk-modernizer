@@ -15,6 +15,7 @@ An MCP-exposed AI agent that analyzes code written with **Semantic Kernel** or *
 | Valentina G. | valentinag@microsoft.com |
 | Emilio Raggi | emilioraggi@microsoft.com |
 | Ana Franco | anafranco@microsoft.com |
+| Jesus Sanchez | jesussan@microsoft.com |
 
 ## 🏗️ Architecture
 

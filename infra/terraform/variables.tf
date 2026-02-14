@@ -405,3 +405,54 @@ variable "apim_nsg_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "apim_deploy_apis" {
+  description = "Whether to deploy APIs into APIM (requires apim_enabled = true)"
+  type        = bool
+  default     = false
+}
+
+# ==============================================================================
+# MCP Server Configuration
+# ==============================================================================
+
+variable "mcp_enabled" {
+  description = "Whether to expose the APIM API as an MCP server (requires apim_deploy_apis = true)"
+  type        = bool
+  default     = false
+}
+
+variable "mcp_server_name" {
+  description = "Name identifier for the MCP server API resource in APIM"
+  type        = string
+  default     = "modernizer-mcp"
+}
+
+variable "mcp_display_name" {
+  description = "Display name of the MCP server shown in APIM and MCP clients"
+  type        = string
+  default     = "Code Modernizer MCP"
+}
+
+variable "mcp_description" {
+  description = "Description of the MCP server"
+  type        = string
+  default     = "MCP server exposing the Code Modernizer Agent API operations as tools"
+}
+
+variable "mcp_path" {
+  description = "Base path for the MCP server endpoint (endpoint will be at {gateway_url}/{mcp_path}/mcp)"
+  type        = string
+  default     = "modernizer-mcp"
+}
+
+variable "mcp_tools" {
+  description = "Map of MCP tools to create. Each tool maps an APIM API operation to an MCP tool"
+  type = map(object({
+    display_name = string
+    description  = string
+    api_key      = string
+    operation_id = string
+  }))
+  default = {}
+}
