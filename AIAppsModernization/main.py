@@ -37,6 +37,7 @@ from azure.identity.aio import DefaultAzureCredential
 load_dotenv(override=True)
 
 logger = logging.getLogger("sanitize_payload")
+
 ##
 #workound for APIM MCP translating null/empty fields as empty strings, which causes SDK crashes
 ##
@@ -138,6 +139,45 @@ class SanitizePayloadMiddleware:
         await self.app(scope, patched_receive, send)
 
 
+# ==============================================================================
+# Agent Instructions & Tools
+# ==============================================================================
+
+AGENT_INSTRUCTIONS = """\
+You are an expert AI Agent Code Modernizer that converts AI agent code from \
+Semantic Kernel or AutoGen to Microsoft Agent Framework (MAF).
+
+WORKFLOW — For every modernization request:
+1. Call analyze_code_patterns to identify the source framework and all patterns used
+2. Call get_migration_guide to retrieve the mapping rules for the detected framework
+3. Call generate_modernized_code to produce the base modernized structure
+4. Enhance the generated code with your expertise to produce a COMPLETE, WORKING solution
+
+OUTPUT REQUIREMENTS:
+- ALWAYS include the COMPLETE modernized Python source file in a ```python code block
+- Convert EVERY function, class, and pattern from the original — no placeholders or TODOs
+- Preserve the original application's behavior and logic exactly
+- Include all necessary imports and environment setup
+
+KEY MAPPINGS (Semantic Kernel → MAF):
+- Kernel() → AzureAIClient().create_agent()
+- @kernel_function → plain functions with Annotated type hints as tools
+- ChatHistory → agent.get_new_thread()
+- FunctionChoiceBehavior.Auto() → automatic (built-in to MAF)
+- kernel.add_plugin() → tools=[...] parameter in create_agent()
+- AzureChatCompletion → AzureAIClient with DefaultAzureCredential
+
+KEY MAPPINGS (AutoGen → MAF):
+- AssistantAgent → AzureAIClient().create_agent()
+- GroupChat/RoundRobinGroupChat → WorkflowBuilder
+- UserProxyAgent → workflow handlers
+- config_list/llm_config → AzureAIClient configuration
+- register_function → tools parameter
+
+NEVER respond with only analysis, guidance, or checklists. \
+You MUST generate the complete modernized code."""
+
+
 def get_tools():
     """Get the modernization tools."""
     from tools import (
@@ -172,8 +212,7 @@ async def run_as_mcp_server():
             credential=credential,
         ).create_agent(
             name="CodeModernizer",
-            instructions="""You are an expert AI Agent Code Modernizer. Your role is to modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework.
-Help developers migrate their AI agent applications by analyzing code patterns, generating modernized code, and providing migration guides.""",
+            instructions=AGENT_INSTRUCTIONS,
             tools=get_tools(),
         ) as agent,
     ):
@@ -213,8 +252,7 @@ async def run_as_http_server():
             credential=credential,
         ).create_agent(
             name="CodeModernizer",
-            instructions="""You are an expert AI Agent Code Modernizer. Your role is to modernize AI agent code from Semantic Kernel or AutoGen to Microsoft Agent Framework.
-Help developers migrate their AI agent applications by analyzing code patterns, generating modernized code, and providing migration guides.""",
+            instructions=AGENT_INSTRUCTIONS,
             tools=get_tools(),
         ) as agent,
     ):
